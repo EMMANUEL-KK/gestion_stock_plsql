@@ -1,0 +1,63 @@
+-- ============================================
+-- Système de Gestion de Stock et Commandes
+-- Script 1 : Création des tables
+-- ============================================
+
+-- Table des produits
+CREATE TABLE PRODUIT (
+    NO_PROD NUMBER PRIMARY KEY,
+    DESIGN_PROD VARCHAR2(100) NOT NULL,
+    PRIX_UNITE NUMBER(10,2) NOT NULL,
+    STOCK NUMBER NOT NULL
+);
+
+-- Table des commandes
+CREATE TABLE COMMANDE (
+    NO_CMD NUMBER PRIMARY KEY,
+    NO_PROD NUMBER REFERENCES PRODUIT(NO_PROD),
+    DATE_CMD DATE DEFAULT SYSDATE,
+    QUANTITE NUMBER NOT NULL,
+    MONTANT NUMBER(10,2)
+);
+
+-- Table de journalisation (audit trail) des modifications
+CREATE TABLE LOG_STOCK (
+    ID_LOG NUMBER PRIMARY KEY,
+    DATE_OP DATE DEFAULT SYSDATE,
+    USERNAME VARCHAR2(50),
+    OPERATION VARCHAR2(50),
+    DETAILS VARCHAR2(200)
+);
+
+-- Séquence pour générer les ID_LOG automatiquement
+CREATE SEQUENCE SEQ_LOG_STOCK START WITH 1 INCREMENT BY 1;
+
+-- Trigger pour auto-incrémenter ID_LOG
+CREATE OR REPLACE TRIGGER TRG_LOG_STOCK_ID
+BEFORE INSERT ON LOG_STOCK
+FOR EACH ROW
+BEGIN
+    :NEW.ID_LOG := SEQ_LOG_STOCK.NEXTVAL;
+END;
+/
+
+-- Table d'historique des commandes refusées (stock insuffisant)
+CREATE TABLE COMMANDE_REFUSEE (
+    ID_REFUS NUMBER PRIMARY KEY,
+    NO_PROD NUMBER,
+    QUANTITE_DEMANDEE NUMBER,
+    DATE_REFUS DATE DEFAULT SYSDATE,
+    MOTIF VARCHAR2(200)
+);
+
+-- Séquence pour générer les ID_REFUS automatiquement
+CREATE SEQUENCE SEQ_COMMANDE_REFUSEE START WITH 1 INCREMENT BY 1;
+
+-- Trigger pour auto-incrémenter ID_REFUS
+CREATE OR REPLACE TRIGGER TRG_COMMANDE_REFUSEE_ID
+BEFORE INSERT ON COMMANDE_REFUSEE
+FOR EACH ROW
+BEGIN
+    :NEW.ID_REFUS := SEQ_COMMANDE_REFUSEE.NEXTVAL;
+END;
+/
